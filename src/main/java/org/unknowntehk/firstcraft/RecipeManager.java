@@ -32,7 +32,7 @@ public class RecipeManager implements Listener {
             try {
                 craftLimitsFile.createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+                plugin.getLogger().severe("Could not create craftLimits.yml: " + e.getMessage());
             }
         }
         craftLimitsConfig = YamlConfiguration.loadConfiguration(craftLimitsFile);
@@ -52,7 +52,7 @@ public class RecipeManager implements Listener {
         try {
             craftLimitsConfig.save(craftLimitsFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("Could not save craftLimits.yml: " + e.getMessage());
         }
     }
 
@@ -82,24 +82,42 @@ public class RecipeManager implements Listener {
         ItemStack result = event.getRecipe().getResult();
         ItemMeta meta = result.getItemMeta();
         if (meta != null && meta.hasCustomModelData()) {
-            String modelDataKey = String.valueOf(meta.getCustomModelData());
-            if (craftLimits.getOrDefault(modelDataKey, false)) {
+            String recipeKey = findMatchingRecipeKey(meta);
+            if (recipeKey == null) return; // Stop if no matching key is found
+
+            if (craftLimits.getOrDefault(recipeKey, false)) {
                 event.setCancelled(true);
                 event.getWhoClicked().sendMessage("This unique item has already been crafted.");
                 return;
             }
-            craftLimits.put(modelDataKey, true);
+            craftLimits.put(recipeKey, true);
             saveCraftLimits(); // Ensure to save after updating the limits
-            executeCommands(modelDataKey, event.getWhoClicked().getName());
+            executeCommands(recipeKey, event.getWhoClicked().getName());
         }
     }
 
-    public void executeCommands(String modelDataKey, String playerName) {
-        List<String> commands = plugin.getConfig().getStringList("recipes." + modelDataKey + ".commands");
+    private String findMatchingRecipeKey(ItemMeta meta) {
+        String configPath = "recipes";
+        FileConfiguration config = plugin.getConfig();
+        if (config.getConfigurationSection(configPath) == null) return null;
+
+        for (String key : config.getConfigurationSection(configPath).getKeys(false)) {
+            int modelDataConfig = config.getInt(configPath + "." + key + ".customModelData");
+            if (meta.getCustomModelData() == modelDataConfig) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+    public void executeCommands(String recipeKey, String playerName) {
+        List<String> commands = plugin.getConfig().getStringList("recipes." + recipeKey + ".commands");
         if (!commands.isEmpty()) {
-            commands.forEach(command ->
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("{player}", playerName))
-            );
+            commands.forEach(command -> {
+                String formattedCommand = command.replace("{player}", playerName);
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
+                plugin.getLogger().info("Executing Command: " + formattedCommand);
+            });
         }
     }
 
