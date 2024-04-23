@@ -28,11 +28,6 @@ public class RecipeManager implements Listener {
     public RecipeManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.craftLimitsFile = new File(plugin.getDataFolder(), "craftLimits.yml");
-        loadCraftLimitsConfig();
-        loadRecipes();
-    }
-
-    private void loadCraftLimitsConfig() {
         if (!craftLimitsFile.exists()) {
             try {
                 craftLimitsFile.createNewFile();
@@ -41,12 +36,18 @@ public class RecipeManager implements Listener {
             }
         }
         craftLimitsConfig = YamlConfiguration.loadConfiguration(craftLimitsFile);
+        loadCraftLimits();
+        loadRecipes();
+    }
+
+    private void loadCraftLimits() {
+        craftLimits.clear();
         craftLimitsConfig.getKeys(false).forEach(key ->
                 craftLimits.put(key, craftLimitsConfig.getBoolean(key))
         );
     }
 
-    private void saveCraftLimitsConfig() {
+    private void saveCraftLimits() {
         craftLimits.forEach((key, value) -> craftLimitsConfig.set(key, value));
         try {
             craftLimitsConfig.save(craftLimitsFile);
@@ -56,31 +57,23 @@ public class RecipeManager implements Listener {
     }
 
     public void loadRecipes() {
-        FileConfiguration config = plugin.getConfig();
         Bukkit.resetRecipes();
+        FileConfiguration config = plugin.getConfig();
         config.getConfigurationSection("recipes").getKeys(false).forEach(recipeKey -> {
-            try {
-                String path = "recipes." + recipeKey;
-                ItemStack item = new ItemStack(Material.valueOf(config.getString(path + ".material")), 1);
-                ItemMeta meta = item.getItemMeta();
-                if (config.contains(path + ".customModelData")) {
-                    meta.setCustomModelData(config.getInt(path + ".customModelData"));
-                    item.setItemMeta(meta);
-                    craftLimits.put(String.valueOf(meta.getCustomModelData()), false);
-                    plugin.getLogger().info("Loading recipe with custom model data: " + meta.getCustomModelData());
-                }
-                ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(plugin, recipeKey), item);
-                List<String> shape = config.getStringList(path + ".shape");
-                recipe.shape(shape.toArray(new String[0]));
-                config.getConfigurationSection(path + ".ingredients").getKeys(false).forEach(charKey ->
-                        recipe.setIngredient(charKey.charAt(0), Material.valueOf(config.getString(path + ".ingredients." + charKey)))
-                );
-                Bukkit.addRecipe(recipe);
-                plugin.getLogger().info("Recipe registered successfully: " + recipeKey);
-            } catch (Exception e) {
-                plugin.getLogger().severe("Failed to load recipe: " + recipeKey);
-                e.printStackTrace();
+            String path = "recipes." + recipeKey;
+            ItemStack item = new ItemStack(Material.valueOf(config.getString(path + ".material")), 1);
+            ItemMeta meta = item.getItemMeta();
+            if (config.contains(path + ".customModelData")) {
+                meta.setCustomModelData(config.getInt(path + ".customModelData"));
+                item.setItemMeta(meta);
             }
+            ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(plugin, recipeKey), item);
+            List<String> shape = config.getStringList(path + ".shape");
+            recipe.shape(shape.toArray(new String[0]));
+            config.getConfigurationSection(path + ".ingredients").getKeys(false).forEach(charKey ->
+                    recipe.setIngredient(charKey.charAt(0), Material.valueOf(config.getString(path + ".ingredients." + charKey)))
+            );
+            Bukkit.addRecipe(recipe);
         });
     }
 
@@ -96,25 +89,22 @@ public class RecipeManager implements Listener {
                 return;
             }
             craftLimits.put(modelDataKey, true);
-            saveCraftLimitsConfig(); // Save limits after updating
+            saveCraftLimits(); // Ensure to save after updating the limits
             executeCommands(modelDataKey, event.getWhoClicked().getName());
         }
     }
 
-    private void executeCommands(String modelDataKey, String playerName) {
+    public void executeCommands(String modelDataKey, String playerName) {
         List<String> commands = plugin.getConfig().getStringList("recipes." + modelDataKey + ".commands");
         if (!commands.isEmpty()) {
             commands.forEach(command ->
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command.replace("{player}", playerName))
             );
-        } else {
-            plugin.getLogger().info("No commands found for model key: " + modelDataKey);
         }
     }
 
     public void reloadRecipes() {
-        craftLimits.clear();
-        loadCraftLimitsConfig();
+        loadCraftLimits();
         loadRecipes();
     }
 }

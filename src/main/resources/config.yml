@@ -3,8 +3,8 @@ recipes:
     material: DIAMOND_SWORD
     customModelData: 10006
     shape:
-      - " D "
-      - " D "
+      - " DD"
+      - " DD"
       - " S "
     ingredients:
       D: DIAMOND
