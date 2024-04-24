@@ -6,30 +6,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class RecipeCommand implements CommandExecutor {
-    private FirstCraftPlugin plugin;
-    private RecipeManager recipeManager;
+    private final FirstCraftPlugin plugin;
+    private final RecipeGUI recipeGUI;
 
-    public RecipeCommand(FirstCraftPlugin plugin, RecipeManager recipeManager) {
+    public RecipeCommand(FirstCraftPlugin plugin, RecipeGUI recipeGUI) {
         this.plugin = plugin;
-        this.recipeManager = recipeManager;
+        this.recipeGUI = recipeGUI;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("Only players can use this command.");
+        if (sender instanceof Player) {
+            Player player = (Player) sender;
+            recipeGUI.openRecipesGUI(player);
             return true;
         }
-
-        Player player = (Player)sender;
-        if (args.length > 0 && args[0].equalsIgnoreCase("reload") && sender.hasPermission("firstcraft.reload")) {
-            plugin.reloadPluginConfig();
-            sender.sendMessage("Configuration reloaded.");
-            return true;
-        }
-
-        // Optionally, you could add logic to display a GUI with recipes here.
-        player.sendMessage("Use the GUI to view recipes (functionality not implemented).");
-        return true;
+        return false;
     }
 }

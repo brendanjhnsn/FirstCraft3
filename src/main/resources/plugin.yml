@@ -1,8 +1,8 @@
 name: FirstCraft
-version: 1.0
 main: org.unknowntehk.firstcraft.FirstCraftPlugin
+version: 1.0
 api-version: 1.13
+author: UnknownTehk
 commands:
   recipes:
-    description: Displays recipes GUI and manages plugin reload
-    usage: /<command> [reload]
+    description: View custom recipes

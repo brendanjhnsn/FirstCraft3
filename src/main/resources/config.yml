@@ -2,6 +2,9 @@ recipes:
   custom_diamond_sword:
     material: DIAMOND_SWORD
     customModelData: 10006
+    display_name: "Special Diamond Sword"
+    lore:
+      - "A mighty sword with unique powers."
     shape:
       - " DD"
       - " DD"
@@ -10,11 +13,9 @@ recipes:
       D: DIAMOND
       S: STICK
     commands:
-      - "say {player} has crafted a special Diamond Sword!"
+      - "say {player} has crafted a Special Diamond Sword!"
 
-
-# Optional: Define additional crafting restrictions or features
 craftLimits:
-  DIAMOND_SWORD: 1
-  DIAMOND_AXE: 1
-  IRON_PICKAXE: 1
+  custom_diamond_sword: 1
+  custom_diamond_axe: 1
+  custom_iron_pickaxe: 1
