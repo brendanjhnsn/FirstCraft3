@@ -5,13 +5,17 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.CraftingInventory;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,15 +112,39 @@ public class RecipeManager implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta != null && meta.hasCustomModelData()) {
             String recipeKey = findMatchingRecipeKey(meta);
-            if (recipeKey == null) return; // Stop if no matching key is found
+            if (recipeKey == null) return; // If no matching recipe key is found, exit.
 
+            // Cancel the event to prevent Minecraft from handling the item crafting
+            event.setCancelled(true);
+
+            // Check if this unique item has crafting limits and enforce them
             if (craftLimits.getOrDefault(recipeKey, false)) {
-                event.setCancelled(true);
                 event.getWhoClicked().sendMessage("This unique item has already been crafted.");
                 return;
             }
+
+            // Update and save craft limits
             craftLimits.put(recipeKey, true);
-            saveCraftLimits(); // Ensure to save after updating the limits
+            saveCraftLimits();
+
+            // Manually consume the items used in the crafting
+            Inventory inventory = event.getInventory();
+            for (int i = 0; i < inventory.getSize(); i++) {
+                if (inventory.getItem(i) != null) {
+                    ItemStack itemStack = inventory.getItem(i);
+                    itemStack.setAmount(itemStack.getAmount() - 1);
+                    if (itemStack.getAmount() <= 0) {
+                        inventory.setItem(i, null);
+                    }
+                }
+            }
+
+            // Update the player's inventory to reflect changes
+            if (event.getWhoClicked() instanceof Player) {
+                ((Player) event.getWhoClicked()).updateInventory();
+            }
+
+            // Execute commands as configured in config.yml
             executeCommands(recipeKey, event.getWhoClicked().getName());
         }
     }
