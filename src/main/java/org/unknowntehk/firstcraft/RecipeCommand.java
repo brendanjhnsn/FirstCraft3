@@ -23,4 +23,4 @@ public class RecipeCommand implements CommandExecutor {
         }
         return false;
     }
-}
+};

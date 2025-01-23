@@ -14,8 +14,4 @@ recipes:
       S: STICK
     commands:
       - "say {player} has crafted a Special Diamond Sword!"
-
-craftLimits:
-  custom_diamond_sword: 1
-  custom_diamond_axe: 1
-  custom_iron_pickaxe: 1
+      - "iagive {player} iaitemhere"

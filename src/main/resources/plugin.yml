@@ -6,3 +6,12 @@ author: UnknownTehk
 commands:
   recipes:
     description: View custom recipes
+    usage: /<command>
+    aliases: [recipe]
+  reloadrecipes:
+    description: Reload the FirstCraft plugin configuration
+    usage: /<command> reload
+permissions:
+  firstcraft.reload:
+    description: Allows the player to reload the FirstCraft configuration
+    default: op
